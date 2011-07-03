@@ -1,7 +1,10 @@
 (ns gui
   (refer paint :only '[draw-panel-paint])
   (import (javax.swing JFrame JPanel WindowConstants ButtonGroup JRadioButton))
-  (import (java.awt Dimension BorderLayout)))
+  (import (java.awt Dimension BorderLayout))
+  (import (java.awt.event ActionListener)))
+
+(def left-click-create-type (atom "Unit"))
 
 (def main-frame (JFrame.))
 (def debug-frame (JFrame.))
@@ -10,6 +13,10 @@
 (def create-unit-radio-button (JRadioButton.))
 (def create-obstacle-radio-button (JRadioButton.))
 (def create-selection-button-group (ButtonGroup.))
+(def create-selection-action-listener
+  (proxy (ActionListener) []
+    (actionPerformed [actionEvent]
+      (reset! left-click-create-type (.getActionCommand actionEvent)))))
 
 (.setActionCommand create-unit-radio-button "Unit")
 (.setSelected create-unit-radio-button true)
@@ -18,6 +25,8 @@
 (.add create-selection-button-group create-obstacle-radio-button)
 (.add toolbar-panel create-unit-radio-button)
 (.add toolbar-panel create-obstacle-radio-button)
+(.addActionListener create-unit-radio-button create-selection-action-listener)
+(.addActionListener create-obstacle-radio-button create-selection-action-listener)
 
 (def draw-panel
   (doto
