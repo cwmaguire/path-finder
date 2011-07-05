@@ -73,7 +73,7 @@
   "convert two points, or a selection containing two points, to a list containing the
    x, y, width and height of a rectangle formed by the points"
   ([point-one point-two]
-  (let [x1 (.getX point-one) x2 (.getX point-two) y1 (.getY point-one) y2 (.getY point-two)]
-    [(min x1 x2) (min y1 y2) (- (max x1 x2) (min x1 x2)) (- (max y1 y2) (min y1 y2))]))
+    (let [x1 (.getX point-one) x2 (.getX point-two) y1 (.getY point-one) y2 (.getY point-two)]
+      [(min x1 x2) (min y1 y2) (- (max x1 x2) (min x1 x2)) (- (max y1 y2) (min y1 y2))]))
   ([selection]
     (xywh (:start selection) (:end selection))))

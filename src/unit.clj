@@ -22,12 +22,18 @@
    to the existing room selections"
   [mouse-event]
   (let [new-unit (atom {:shape (Rectangle2D$Float. (resolve-to-square (.getX mouse-event)) (resolve-to-square (.getY mouse-event)) unit-size unit-size)})]
-    (swap! units conj new-unit)))
+    (swap! units conj new-unit)
+    new-unit))
 
 (defn unit-ref-shape-xywh
   "Given unit ref, return the x, y, w, h of the unit's shape"
   ([unit-ref] (unit-ref-shape-xywh unit-ref 0))
-  ([unit-ref padding] (let [shape (:shape @unit-ref)] [(.getX shape) (.getY shape) (+ padding (.getWidth shape)) (+ padding (.getHeight shape))])))
+  ([unit-ref padding]
+    (let [shape (:shape @unit-ref)]
+      [(.getX shape)
+       (.getY shape)
+       (+ padding (.getWidth shape))
+       (+ padding (.getHeight shape))])))
 
 
 (defn move-unit

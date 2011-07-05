@@ -8,7 +8,7 @@
 (def selection (atom nil))
 
 (defn selection-rectangle
-  "Given two, create a rectangle the encompasses both points. (Might be a dupe of xywh)"
+  "Given two points, create a rectangle the encompasses both points. (Might be a dupe of xywh)"
   []
   (let [{:keys [start end]} @selection]
     (if (and start end)
@@ -19,7 +19,9 @@
         (Rectangle2D$Float. (min start-x end-x) (min start-y end-y) (abs (- start-x end-x)) (abs (- start-y end-y)))
         ))))
 
-(defn sel-contains-unit? [sel-rect unit]
+(defn sel-contains-unit?
+  "Check if a unit is contained within a selection rectangle"
+  [sel-rect unit]
   (let [unit-rect (.getBounds2D (:shape @unit))]
     (.contains sel-rect unit-rect)))
 
@@ -74,7 +76,9 @@
   [unit ctrl?]
   (if (not ctrl?)
     (swap! selected-units empty))
+
+  ; remove selected unit from selection on ctrl+LMB
   (if (unit-selected? unit)
-    (swap! selected-units (partial remove #(= unit %)))
-    (swap! selected-units conj unit)))
+      (swap! selected-units (partial remove #(= unit %)))
+      (swap! selected-units conj unit)))
 

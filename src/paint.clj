@@ -5,10 +5,13 @@
   ;(:use [gui :only [draw-panel]])
   (:import
     (java.awt.geom Line2D$Float)
-    (java.awt Color)))
+    (java.awt Color)
+    (javax.swing SwingUtilities JPanel)))
+
+(prn "Loading paint")
 
 (def draw-grid? true)
-(def paint-panel (atom nil))
+;(def paint-panel (atom nil))
 
 (defn in-clip?
   "Returns if a unit is in a clipping region shape. (Might be dupe of sel-contains-unit?)"
@@ -57,12 +60,25 @@
 (defn draw-panel-paint
   "Function to repaint the dirty regions of the draw panel"
   [panel g2d]
-      (if draw-grid? (draw-grid panel g2d)))
+      (if draw-grid? (draw-grid panel g2d))
+
+      (let [units @units
+            selection @selection
+            sel-start (:start selection)
+            sel-end (:end selection)]
+        (if units
+          (doall (map (fn [unit] (draw-unit g2d unit)) (filter (partial in-clip? (.getClip g2d)) units))))
+
+        (draw-selection g2d)))
+
+(def paint-panel (proxy (JPanel) [] (paintComponent [g2d] (draw-panel-paint this g2d))))
 
 (defn repaint-draw-panel
   "Wrapper function for .repaint to allow (apply) to be used"
   [x y w h]
-  (.repaint @paint-panel x y w h))
+  (prn "repaint coords" x y w h)
+  ;(SwingUtilities/invokeLater #(.repaint @paint-panel x y w h))
+  (.repaint paint-panel x y w h))
 
 (defn do-repaints
   "handle each required repaint"
@@ -79,10 +95,30 @@
   ;could also use the frequencies function to look for elements with more than 1 occurrence
   (apply disj (set (concat xs ys)) (clojure.set/intersection (set xs) (set ys))))
 
+(defn unit-dimensions
+  "Given a seq of units, return a seq of vectors containing x y w h coordinates for a units shape"
+  [unit-refs]
+  (map unit-ref-shape-xywh unit-refs)
+  )
+
 (defn paint-changed-units
   "calls repaint for units that are added to or removed from the reference (e.g. selected units, all units)"
-  [key ref old-state new-state]
-    (-> (Thread. #(doseq [xywh (map unit-ref-shape-xywh (unique old-state new-state) (repeat 1))] (apply repaint-draw-panel xywh))) (.start)))
+  [key ref units-then units-now]
+  ;(prn (type units-then) " " (type units-now))
+  (let [units-to-repaint (unique units-then units-now)]
+
+    ;(prn "units to repaint" units-to-repaint)
+
+    (-> (Thread.
+        (fn []
+          ;(print "Count: " (count units-to-repaint))
+          (doseq [unit units-to-repaint]
+            ;(unit-ref-shape-xywh unit 1)
+            ;(prn (unit-ref-shape-xywh unit 1))
+            (apply repaint-draw-panel (unit-ref-shape-xywh unit 1))
+            ;(prn :a)
+          )) "paint-changed-units")
+      (.start))))
 
 ; !! use a watch to do the repainting
 ;(defn draw-moves
@@ -98,3 +134,7 @@
 (add-watch units ::units-watch paint-changed-units)
 (add-watch selected-units ::selected-units-watch paint-changed-units)
 (add-watch repaints ::repaints-watch do-repaints)
+
+;(defn f [key ref old new] (let [units (unique old new) xywhs (map unit-ref-shape-xywh units (repeat 1))] (-> (Thread. (fn [] :a)) (.start))))
+(defn f [key ref old new] (let [units (unique old new) xywhs (map unit-ref-shape-xywh units (repeat 1))] (.start (Thread. (prn :b) "blah"))))
+;(add-watch units ::f f)
