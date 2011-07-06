@@ -10,8 +10,6 @@
            (java.awt Dimension BorderLayout))
   )
 
-(prn "Loading gui")
-
 (def main-frame (JFrame.))
 (def debug-frame (JFrame.))
 

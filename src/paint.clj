@@ -8,10 +8,7 @@
     (java.awt Color)
     (javax.swing SwingUtilities JPanel)))
 
-(prn "Loading paint")
-
 (def draw-grid? true)
-;(def paint-panel (atom nil))
 
 (defn in-clip?
   "Returns if a unit is in a clipping region shape. (Might be dupe of sel-contains-unit?)"
@@ -71,13 +68,12 @@
 
         (draw-selection g2d)))
 
+;defined here so that it can be referred to here as well as in gui.clj
 (def paint-panel (proxy (JPanel) [] (paintComponent [g2d] (draw-panel-paint this g2d))))
 
 (defn repaint-draw-panel
   "Wrapper function for .repaint to allow (apply) to be used"
   [x y w h]
-  (prn "repaint coords" x y w h)
-  ;(SwingUtilities/invokeLater #(.repaint @paint-panel x y w h))
   (.repaint paint-panel x y w h))
 
 (defn do-repaints
@@ -85,7 +81,6 @@
   [key ref old-state new-state]
   (let [repaints new-state]
     (swap! repaints empty)
-    ;(SwingUtilities/invokeLater (fn [] (do
     (doseq [[x y w h] repaints]
       (.repaint @paint-panel x y w h))))
 
@@ -104,19 +99,11 @@
 (defn paint-changed-units
   "calls repaint for units that are added to or removed from the reference (e.g. selected units, all units)"
   [key ref units-then units-now]
-  ;(prn (type units-then) " " (type units-now))
   (let [units-to-repaint (unique units-then units-now)]
-
-    ;(prn "units to repaint" units-to-repaint)
-
     (-> (Thread.
         (fn []
-          ;(print "Count: " (count units-to-repaint))
           (doseq [unit units-to-repaint]
-            ;(unit-ref-shape-xywh unit 1)
-            ;(prn (unit-ref-shape-xywh unit 1))
             (apply repaint-draw-panel (unit-ref-shape-xywh unit 1))
-            ;(prn :a)
           )) "paint-changed-units")
       (.start))))
 
@@ -129,12 +116,15 @@
   ;!! remove finished moves
 ;  (swap! unit-moves empty))
 
+(defn repaint-selection
+  "repaints the area affected by the changing of the selection box"
+  [key ref old-selection new-selection]
+  (if-let [combined-selections (union-selections old-selection new-selection)]
+    (.start (Thread. #(apply repaint-draw-panel (map + combined-selections [0 0 1 1]))))
+    (prn "selection is nil")))
+
 ; not sure why this works even though we're not deref'ing the future
-(add-watch selection "selection-watch" (fn [key ref old-state new-state] (future (apply #(.repaint @paint-panel % %2 (+ 1 %3) (+ 1 %4)) (union-selections old-state new-state)))))
+(add-watch selection "selection-watch" repaint-selection)
 (add-watch units ::units-watch paint-changed-units)
 (add-watch selected-units ::selected-units-watch paint-changed-units)
 (add-watch repaints ::repaints-watch do-repaints)
-
-;(defn f [key ref old new] (let [units (unique old new) xywhs (map unit-ref-shape-xywh units (repeat 1))] (-> (Thread. (fn [] :a)) (.start))))
-(defn f [key ref old new] (let [units (unique old new) xywhs (map unit-ref-shape-xywh units (repeat 1))] (.start (Thread. (prn :b) "blah"))))
-;(add-watch units ::f f)

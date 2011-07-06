@@ -59,7 +59,8 @@
    handles an empty new selection (i.e. selection is cancelled)"
   ([sel-old sel-new]
     (cond
-      (:start sel-new) (union-selections (:start sel-new) (:end sel-new) (:start sel-old) (:end sel-old))
+      (and (:start sel-new) (:start sel-old)) (union-selections (:start sel-new) (:end sel-new) (:start sel-old) (:end sel-old))
+      (:start sel-new) (xywh sel-new)
       (:start sel-old) (xywh sel-old)
       :default nil))
 
