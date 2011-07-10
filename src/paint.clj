@@ -78,11 +78,13 @@
 
 (defn do-repaints
   "handle each required repaint"
-  [key ref old-state new-state]
-  (let [repaints new-state]
-    (swap! repaints empty)
-    (doseq [[x y w h] repaints]
-      (.repaint @paint-panel x y w h))))
+  [_ ref _ new-state]
+  (let [new-repaints new-state]
+    (if (seq new-repaints)
+      (do
+        (swap! repaints empty)
+        (doseq [{:keys [x y w h]} new-repaints]
+          (SwingUtilities/invokeLater #(.repaint paint-panel x y w h)))))))
 
 (defn unique
   "given two collections, return a set of elements unique to both collections; e.g. [1 2 3][3 4 5] -> [1 2 4 5]"
@@ -107,24 +109,13 @@
           )) "paint-changed-units")
       (.start))))
 
-; !! use a watch to do the repainting
-;(defn draw-moves
-;  "Performs all moves and then repaints resulting clips"
-;  []
-;  (doseq [{:keys [x y w h]} (do-moves)] (debug "redraw clip x: " x " y: " y " w: " w " h: " h)(.repaint draw-panel x y (+ w 1) (+ h 1)) )
-;
-  ;!! remove finished moves
-;  (swap! unit-moves empty))
-
 (defn repaint-selection
   "repaints the area affected by the changing of the selection box"
   [key ref old-selection new-selection]
   (if-let [combined-selections (union-selections old-selection new-selection)]
-    (.start (Thread. #(apply repaint-draw-panel (map + combined-selections [0 0 1 1]))))
-    (prn "selection is nil")))
+    (.start (Thread. #(apply repaint-draw-panel (map + combined-selections [0 0 1 1]))))))
 
-; not sure why this works even though we're not deref'ing the future
-(add-watch selection "selection-watch" repaint-selection)
+(add-watch selection ::selection-watch repaint-selection)
 (add-watch units ::units-watch paint-changed-units)
 (add-watch selected-units ::selected-units-watch paint-changed-units)
 (add-watch repaints ::repaints-watch do-repaints)

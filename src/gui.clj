@@ -10,8 +10,8 @@
            (java.awt Dimension BorderLayout))
   )
 
-(def main-frame (JFrame.))
-(def debug-frame (JFrame.))
+(def main-frame (JFrame. "Path Finder"))
+(def debug-frame (JFrame. "PF - Debug"))
 
 (def toolbar-panel (JPanel.))
 ;(def draw-panel (proxy (JPanel) [] (paintComponent [g2d] (draw-panel-paint this g2d))))

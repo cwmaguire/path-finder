@@ -55,5 +55,5 @@
     (swap! unit assoc :shape new-shape)
 
     ; store clipping range to redraw any area where a unit has moved
-    (swap! repaints conj {:x (min x-orig x-dest) :y (min y-orig y-dest) :w (+ unit-size (- (max x-orig x-dest) (min x-orig x-dest))) :h (+ unit-size (- (max y-orig y-dest) (min y-orig y-dest)))})
+    (swap! repaints conj {:x (min x-orig x-dest) :y (min y-orig y-dest) :w (+ 1 unit-size (- (max x-orig x-dest) (min x-orig x-dest))) :h (+ 1 unit-size (- (max y-orig y-dest) (min y-orig y-dest)))})
     ))

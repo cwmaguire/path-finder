@@ -12,16 +12,16 @@
 (def left-click-create-type (atom "Unit"))
 
 (defn new-unit
-  "Given a mouse event and a ctrl flag (for the Ctrl keyboard key), create a new room and either select it or add it
+  "Given a mouse event and a ctrl? flag (for the Ctrl keyboard key), create a new room and either select it or add it
    to the existing room selections"
   [mouse-event ctrl?]
   (select-unit (create-unit mouse-event) ctrl?))
 
 (defn left-mouse [mouse-event]
-  (if-let [unit (get-unit mouse-event)]
-    (select-unit unit (.isControlDown mouse-event)) ; add check for Ctrl key to add selection instead of replace it
-    (new-unit mouse-event (.isControlDown mouse-event)))
-
+  (let [ctrl? (.isControlDown mouse-event)]
+    (if-let [unit (get-unit mouse-event)]
+      (select-unit unit ctrl?)
+      (new-unit mouse-event ctrl?)))
   (swap! selection assoc :start nil :end nil))
 
 (defn right-mouse [mouse-event]
