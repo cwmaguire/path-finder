@@ -172,9 +172,12 @@
 
   (debug "best path - target: " target)
 
-  (dosync (alter dissoc unit))
+  (dosync (alter pheromones dissoc unit))
 
-  (let [fns (repeat num-ants (fn [] (explore [src] (partial rand-dir occupied? square-size) target 0 5 unit)))
+  (let [fns (repeat num-ants (fn [] (explore [src] (partial rand-dir occupied? square-size) target 0 10 unit)))
         paths (apply pcalls fns)
         shortest (shortest-path paths target)]
-    (if (nil? shortest) (closest-path paths) shortest)))
+    (debug "best-path: sent out ants - " paths)
+    (if (nil? shortest) (closest-path paths target) shortest)))
+
+;(best-path :unit {:x 0 :y 0} {:x 20 :y 20} (fn [x] false) 5)
