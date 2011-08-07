@@ -2,13 +2,14 @@
 (ns unit
   (:use [geom :only [xy-delta]])
   (:use [grid :only [square-size resolve-to-square]])
+  (:use [path :only [best-path]])
   (:import (java.awt.geom Rectangle2D$Float Point2D$Float)))
 
 (def units (atom []))
 ;(def unit-moves (atom nil))
 (def repaints (atom []))
 
-(def unit-size (* 3 square-size))
+(def unit-size square-size)
 
 (defn get-unit
   "Given a mouse event, return any unit at the mouse event x,y"
@@ -35,25 +36,45 @@
        (+ padding (.getWidth shape))
        (+ padding (.getHeight shape))])))
 
+(defn get-coords
+  "return the coordinates of a unit ref"
+  [unit]
+  (let [shape (:shape @unit)]
+    {:x (.getX shape) :y (.getY shape)}))
+
+(defn occupied?
+  "Given the coordinates of a square, return if it's occupied by a unit"
+  [square]
+  (filter (fn [unit-ref] (= square (get-coords unit-ref))) @units))
+
+(defn create-repaint-rect
+  "takes two rectangles and returns the union"
+  [rect1 rect2]
+  (.createUnion rect1 rect2))
+
+(defn new-shape
+  "create a new shape with the given coords"
+  [{:keys [x y]} coords]
+  (Rectangle2D$Float. x y unit-size unit-size))
+
+(defn move-unit-along-path
+  "Given a path, move the unit along the path"
+  ([unit path]
+    (if (not (seq path)) true) ; we're there!
+    (if (occupied? (first path)) false) ; we got blocked
+
+    (let [new-shape (new-shape (first path))]
+      (swap! unit assoc :shape new-shape)
+      (swap! repaints conj (create-repaint-rect (.createUnion (:shape @unit) new-shape)))
+      (Thread/sleep 200)
+      (recur unit (next path))
+      )))
 
 (defn move-unit
-  "Work in progress. Move a unit. "
-  [unit-move]
-  (let [{:keys [unit move] :as unit-move} unit-move
-        shape (:shape @unit)
-        x-orig (.getX shape)
-        y-orig (.getY shape)
-        h (.getHeight shape)
-        w (.getWidth shape)
-        x-move (:x move)
-        y-move (:y move)
-        [dx dy] (xy-delta x-orig y-orig x-move y-move)
-        new-shape (Rectangle2D$Float. (+ x-orig dx) (+ y-orig dy) w h)
-        x-dest (.getX new-shape)
-        y-dest (.getY new-shape)]
-    ;(debug "Moving unit from [" x-orig "," y-orig "] to [" x-dest "," y-dest "]")
-    (swap! unit assoc :shape new-shape)
+  "Move a unit."
+  [{:keys [unit move] :as unit-move}]
+    (if (not (move-unit-along-path unit-move (best-path unit move occupied?)))
+      (recur unit-move)))
 
-    ; store clipping range to redraw any area where a unit has moved
-    (swap! repaints conj {:x (min x-orig x-dest) :y (min y-orig y-dest) :w (+ 1 unit-size (- (max x-orig x-dest) (min x-orig x-dest))) :h (+ 1 unit-size (- (max y-orig y-dest) (min y-orig y-dest)))})
-    ))
+
+

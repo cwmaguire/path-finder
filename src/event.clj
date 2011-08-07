@@ -2,7 +2,6 @@
   (:use [unit :only [units move-unit create-unit get-unit]])
   (:use [select :only [selection selected-units select-unit sel-contains-unit? mouse-dragged]])
   (:use [grid :only [resolve-to-square]])
-  ;(:use [paint :only [paint-panel]])
   (:import (java.awt.event ActionListener))
   (:import (java.awt.geom Point2D$Float))
   (:import (java.awt.event MouseEvent MouseAdapter MouseMotionAdapter)))
