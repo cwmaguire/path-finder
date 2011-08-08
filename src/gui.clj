@@ -31,7 +31,7 @@
   [text-area _ _ _ new-state]
   (if (seq new-state)
     (dosync
-      (.setText text-area (str (.getText text-area) new-state "\n"))
+      (SwingUtilities/invokeLater (fn [] (.setText text-area (str (.getText text-area) new-state "\n"))))
       )))
 
 (add-watch path-debug ::path-debug-watch (partial append-debug debug-paint-text-area))

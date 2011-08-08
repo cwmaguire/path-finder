@@ -125,12 +125,17 @@
   memory"
   [path next-move-fn target steps max-steps unit]
   (cond
-    (= steps max-steps) (do (debug "max steps") path)
+    (= steps max-steps)
+      (do
+        ;(debug "max steps")
+        path)
+
     (= target (last path)) path
+
     :default (if-let [next (next-move-fn (last path))]
       (do
         (update-phero unit next)
-        (debug "explore: " (inc steps) max-steps " target " target " path " path " next: " next " new path: " (trunc-conj path next))
+        ;(debug "explore: [" (.getId (Thread/currentThread)) "] " (inc steps) max-steps " target " target " path " path " next: " next " new path: " (trunc-conj path next))
         ;path)
         (recur (trunc-conj path next) next-move-fn target (inc steps) max-steps unit))
       path)))
@@ -151,11 +156,37 @@
   "Given a path, return a map containing the path and the closest distace
   that that path comes to the target (in steps)"
   ([path target]
-    (let [path (reverse path)
-          point-dists (zipmap (map distance path (repeat target)) path)
+    (let [rev-path (reverse path)
+          point-dists (zipmap (map distance rev-path (repeat target)) rev-path)
           shortest-dist (first (sort (keys point-dists)))]
-      {:path (trunc-conj path (get point-dists (first (sort (keys point-dists)))))
+      {:path (trunc-conj path (get point-dists shortest-dist))
        :distance shortest-dist})))
+
+;(let [path (x-path 0 15 0 5)] (zipmap (map distance path (repeat {:x 20 :y 5})) path))
+;(first (sort (keys (let [path (x-path 0 15 0 5)] (zipmap (map distance path (repeat {:x 20 :y 5})) path)))))
+; (trunc-at-closest-point (y-path 0 0 15 5) {:x 5 :y 20}) => {:path [{:x 0, :y 0} {:x 0, :y 5} {:x 0, :y 10} {:x 0, :y 15}], :distance 5}
+; (trunc-at-closest-point (y-path 0 0 15 5) {:x 5 :y 10}) => {:path [{:x 0, :y 0} {:x 0, :y 5}], :distance 5}
+
+(defn diagonal-path
+  "Given a source x, source y, dest x, dest y and step size, create a path
+  (i.e. a list of {:x _ :y _} maps) from the source to the dest"
+  [sx sy dx dy step-size]
+  (map (fn [x y] (zipmap [:x :y] [x y])) (range sx (+ dx step-size) step-size) (range sy (+ dy step-size) step-size)))
+
+(defn x-path
+  "Given a source x, source y, dest x and step size, create a path
+  (i.e. a list of {:x _ :y _} maps) from the source x,y to dest x, source y
+  (i.e. straight along x axis for given y)"
+  [sx dx y step-size]
+  (map (fn [x] (zipmap [:y :x] [y x])) (range sx (+ dx step-size) step-size)))
+; (x-path 0 50 20 5)
+
+(defn y-path
+  "Given a source x, source y, dest y and step size, create a path
+  (i.e. a list of {:x _ :y _} maps) from the source x,y to source x, dest y
+  (i.e. straight along y axis for given x)"
+  [x sy dy step-size]
+  (map (fn [y] (zipmap [:y :x] [y x])) (range sy (+ dy step-size) step-size)))
 
 (defn closest-path
   "Given a list of paths, return a list of maps, each
@@ -164,6 +195,9 @@
   point and the target in steps."
   [paths target]
   (:path (first (sort #(compare (:distance %1) (:distance %2)) (map trunc-at-closest-point paths (repeat target))))))
+
+;(closest-path [(y-path 0 0 15 5) (y-path 15 0 15 5)] {:x 5 :y 20}) => [{:x 0, :y 0} {:x 0, :y 5} {:x 0, :y 10} {:x 0, :y 15}]
+;(closest-path [(y-path 0 0 15 5) (y-path 15 0 15 5)] {:x 5 :y 20}) => [{:x 15, :y 0} {:x 15, :y 5} {:x 15, :y 10} {:x 15, :y 15}]
 
 (defn best-path
   "Given a unit, a target and a function to tell if a tile is occupied, get
@@ -177,7 +211,13 @@
   (let [fns (repeat num-ants (fn [] (explore [src] (partial rand-dir occupied? square-size) target 0 10 unit)))
         paths (apply pcalls fns)
         shortest (shortest-path paths target)]
-    (debug "best-path: sent out ants - " paths)
-    (if (nil? shortest) (closest-path paths target) shortest)))
+    (doseq [path paths]
+      (debug "best-path: paths - " path))
+    (debug "best-path: shortest - " shortest)
+    (if (nil? shortest)
+      (do
+        (debug "best-path: closest - " (closest-path paths target))
+        (closest-path paths target))
+      shortest)))
 
 ;(best-path :unit {:x 0 :y 0} {:x 20 :y 20} (fn [x] false) 5)
