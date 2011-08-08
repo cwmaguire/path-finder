@@ -1,6 +1,6 @@
 (ns grid)
 
-(def square-size 18)
+(def square-size 10)
 (def grid-size 100)
 
 (defn resolve-to-square

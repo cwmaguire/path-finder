@@ -11,6 +11,14 @@
 
 (def unit-size square-size)
 
+(def unit-debug (ref nil))
+
+(defn debug
+  "Given a list, apply str to the list and append to unit-debug"
+  [& strs]
+  (dosync
+    (ref-set unit-debug (apply str (interpose " " strs)))))
+
 (defn get-unit
   "Given a mouse event, return any unit at the mouse event x,y"
   [mouse-event]
@@ -45,35 +53,58 @@
 (defn occupied?
   "Given the coordinates of a square, return if it's occupied by a unit"
   [square]
-  (filter (fn [unit-ref] (= square (get-coords unit-ref))) @units))
+  ;(debug "occupied? " square)
+  (seq (filter (fn [unit-ref] (= square (get-coords unit-ref))) @units)))
+
+(defn inc-rect
+  "Given a rectangle return a rectangle that is one pixel bigger
+  than the original towards 0,0"
+  [rect]
+  (Rectangle2D$Float. (dec (.getX rect)) (dec (.getY rect)) (+ 2 (.getWidth rect)) (+ 2 (.getHeight rect))))
+
+(defn rect-coords
+  "Debug: return the x,y,w,h of a rect2d$float"
+  [rect]
+  [(.getX rect) (.getY rect) (.getHeight rect) (.getWidth rect)])
 
 (defn create-repaint-rect
   "takes two rectangles and returns the union"
   [rect1 rect2]
-  (.createUnion rect1 rect2))
+  (let [rect-union (inc-rect (.createUnion rect1 rect2))]
+    (apply debug "create-repaint-rect: " (map rect-coords [rect1 rect2 rect-union]))
+    rect-union))
 
 (defn new-shape
   "create a new shape with the given coords"
-  [{:keys [x y]} coords]
+  [{:keys [x y]}]
   (Rectangle2D$Float. x y unit-size unit-size))
 
 (defn move-unit-along-path
   "Given a path, move the unit along the path"
-  ([unit path]
-    (if (not (seq path)) true) ; we're there!
-    (if (occupied? (first path)) false) ; we got blocked
+  [unit path]
 
-    (let [new-shape (new-shape (first path))]
-      (swap! unit assoc :shape new-shape)
-      (swap! repaints conj (create-repaint-rect (.createUnion (:shape @unit) new-shape)))
-      (Thread/sleep 200)
-      (recur unit (next path))
-      )))
+    (debug "move-unit-along-path: " path)
+    
+    (cond
+      (not (seq path)) true ; we're there!
+   
+      (occupied? (first path)) false ; we got blocked
+
+      :else
+        (let [new-shape (new-shape (first path))
+              old-shape (:shape @unit)]
+          (swap! unit assoc :shape new-shape)
+          (Thread/sleep 1000)
+          (swap! repaints conj (create-repaint-rect old-shape new-shape))
+          (recur unit (next path)))))
 
 (defn move-unit
   "Move a unit."
   [{:keys [unit move] :as unit-move}]
-    (if (not (move-unit-along-path unit-move (best-path unit move occupied?)))
+
+  (debug "move-unit; move: " move)
+
+    (if (not (move-unit-along-path unit (best-path unit (get-coords unit) move occupied? square-size)))
       (recur unit-move)))
 
 

@@ -65,7 +65,7 @@
 
         (occupied? coord)
           (do
-            ;(debug "dir was occupied: " coord)
+            (debug "dir was occupied: " coord)
             (recur occupied? grid-size src (conj prev coord)))
 
         :else coord))))
@@ -128,14 +128,14 @@
     (= steps max-steps)
       (do
         ;(debug "max steps")
-        path)
+        (next path)) ; chop off the original src point
 
-    (= target (last path)) path
+    (= target (last path)) (next path) ; chop off the original source point
 
     :default (if-let [next (next-move-fn (last path))]
       (do
         (update-phero unit next)
-        ;(debug "explore: [" (.getId (Thread/currentThread)) "] " (inc steps) max-steps " target " target " path " path " next: " next " new path: " (trunc-conj path next))
+        (debug "explore: [" (.getId (Thread/currentThread)) "] " (inc steps) max-steps " target " target " path " path " next: " next " new path: " (trunc-conj path next))
         ;path)
         (recur (trunc-conj path next) next-move-fn target (inc steps) max-steps unit))
       path)))

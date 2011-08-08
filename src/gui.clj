@@ -1,11 +1,10 @@
 (ns paint)
 
 (ns gui
-  ;(:use [paint :only [paint-panel draw-panel-paint]])
-  (:use [paint :only [paint-panel]])
+  (:use [paint :only [paint-panel paint-debug]])
   (:use [event :only [mouse-adapter mouse-motion-adapter create-selection-action-listener]])
   (:use [path :only [path-debug]])
-  ;(:use [clojure.contrib.math :only [abs]])
+  (:use [unit :only [unit-debug]])
   (:import (javax.swing JFrame JPanel JTextArea WindowConstants ButtonGroup JRadioButton SwingUtilities JTabbedPane JScrollPane)
            (java.awt.event MouseAdapter MouseMotionAdapter)
            (java.awt Dimension BorderLayout))
@@ -15,16 +14,14 @@
 (def debug-frame (JFrame. "PF - Debug"))
 
 (def toolbar-panel (JPanel.))
-;(def draw-panel (proxy (JPanel) [] (paintComponent [g2d] (draw-panel-paint this g2d))))
 
 (def create-unit-radio-button (JRadioButton.))
 (def create-obstacle-radio-button (JRadioButton.))
 (def create-selection-button-group (ButtonGroup.))
 
-(def debug-paint-text-area (doto (JTextArea.) (.setPreferredSize (Dimension. 500 500))))
-;(def debug-tab-panel (JTabbedPane.))
-
-;(defn debug [& strs] (.setText text-area (str (.getText text-area) (apply str strs) "\n")))
+(def path-debug-text-area (JTextArea.))
+(def unit-debug-text-area (JTextArea.))
+(def paint-debug-text-area (JTextArea.))
 
 (defn append-debug
   "given a list of debug statements, append the statements to the specified text area"
@@ -34,7 +31,9 @@
       (SwingUtilities/invokeLater (fn [] (.setText text-area (str (.getText text-area) new-state "\n"))))
       )))
 
-(add-watch path-debug ::path-debug-watch (partial append-debug debug-paint-text-area))
+(add-watch path-debug ::path-debug-watch (partial append-debug path-debug-text-area ))
+(add-watch unit-debug ::unit-debug-watch (partial append-debug unit-debug-text-area ))
+(add-watch paint-debug ::paint-debug-watch (partial append-debug paint-debug-text-area ))
 ;(remove-watch path-debug ::path-debug-watch)
 
 (defn run
@@ -42,9 +41,6 @@
   []
   (SwingUtilities/invokeLater
     (fn []
-      ;(.addMouseListener draw-panel mouse-adapter)
-      ;(.addMouseMotionListener draw-panel mouse-motion-adapter)
-
       (.addMouseListener paint-panel mouse-adapter)
       (.addMouseMotionListener paint-panel mouse-motion-adapter)
 
@@ -69,7 +65,9 @@
         (.setLayout (new BorderLayout))
         (.add (doto (JTabbedPane.)
                 (.setPreferredSize (Dimension. 500 500))
-                (.addTab "Paint", (JScrollPane. debug-paint-text-area)))
+                (.addTab "Paint", (doto (JScrollPane. paint-debug-text-area) (.setPreferredSize (Dimension. 500 500))))
+                (.addTab "Path", (doto (JScrollPane. path-debug-text-area) (.setPreferredSize (Dimension. 500 500))))
+                (.addTab "Unit", (doto (JScrollPane. unit-debug-text-area) (.setPreferredSize (Dimension. 500 500)))))
           BorderLayout/CENTER)
         (.setPreferredSize (Dimension. 500 500))
         (.setDefaultCloseOperation WindowConstants/HIDE_ON_CLOSE)
@@ -91,6 +89,7 @@
       (doto debug-frame
         (.setPreferredSize (Dimension. 500 500))
         (.setDefaultCloseOperation WindowConstants/HIDE_ON_CLOSE)
+        .pack
         (.setVisible true)))))
 
 

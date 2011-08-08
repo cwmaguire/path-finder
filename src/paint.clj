@@ -2,13 +2,19 @@
   (:use [unit :only [units repaints unit-ref-shape-xywh]])
   (:use [select :only [selection selected-units unit-selected? union-selections selection-rectangle]])
   (:use [grid])
-  ;(:use [gui :only [draw-panel]])
   (:import
     (java.awt.geom Line2D$Float)
-    (java.awt Color)
+    (java.awt Color Rectangle)
     (javax.swing SwingUtilities JPanel)))
 
 (def draw-grid? true)
+(def paint-debug (ref nil))
+
+(defn debug
+  "Given a list, apply str to the list and append to paint-debug"
+  [& strs]
+  (dosync
+    (ref-set paint-debug (apply str (interpose " " strs)))))
 
 (defn in-clip?
   "Returns if a unit is in a clipping region shape. (Might be dupe of sel-contains-unit?)"
@@ -76,15 +82,23 @@
   [x y w h]
   (.repaint paint-panel x y w h))
 
+(defn new-rectangle
+  "given a Rectangle2D, create a Rectangle"
+  [rect2d]
+  (Rectangle. (int (.getX rect2d)) (int (.getY rect2d)) (int (.getWidth rect2d)) (int (.getHeight rect2d))))
+
 (defn do-repaints
   "handle each required repaint"
   [_ ref _ new-state]
   (let [new-repaints new-state]
+
+    (debug "do-repaints: " new-repaints)
+
     (if (seq new-repaints)
       (do
         (swap! repaints empty)
-        (doseq [{:keys [x y w h]} new-repaints]
-          (SwingUtilities/invokeLater #(.repaint paint-panel x y w h)))))))
+        (doseq [rect (map new-rectangle new-repaints)]
+          (SwingUtilities/invokeLater (fn [] (.repaint paint-panel rect))))))))
 
 (defn unique
   "given two collections, return a set of elements unique to both collections; e.g. [1 2 3][3 4 5] -> [1 2 4 5]"
@@ -101,6 +115,10 @@
 (defn paint-changed-units
   "calls repaint for units that are added to or removed from the reference (e.g. selected units, all units)"
   [key ref units-then units-now]
+
+  ; NOT called when a single unit is changed
+  ;(debug "paint-changed-units")
+
   (let [units-to-repaint (unique units-then units-now)]
     (-> (Thread.
         (fn []
