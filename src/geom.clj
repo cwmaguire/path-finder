@@ -1,7 +1,8 @@
 (ns geom
-  (:use [grid :only [square-size]])
-  (:use [clojure.contrib.math :only [abs expt]])
-  (:use [clojure.contrib.generic.math-functions :only [asin sqrt]]))
+  (:use
+    [grid :only [square-size]]
+    [clojure.contrib.math :only [abs expt]]
+    [clojure.contrib.generic.math-functions :only [asin sqrt]]))
 
 ; asin of "soh" - opposite over hypotenuse
 ; rise over sqrt of rise squared + run squared

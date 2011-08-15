@@ -1,8 +1,9 @@
 
 (ns unit
-  (:use [geom :only [xy-delta]])
-  (:use [grid :only [square-size resolve-to-square]])
-  (:use [path :only [best-path]])
+  (:use
+    [geom :only [xy-delta]]
+    [grid :only [square-size resolve-to-square]]
+    [path :only [best-path]])
   (:import (java.awt.geom Rectangle2D$Float Point2D$Float)))
 
 (def units (atom []))

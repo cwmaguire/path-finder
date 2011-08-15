@@ -1,14 +1,14 @@
 (ns paint)
 
 (ns gui
-  (:use [paint :only [paint-panel paint-debug]])
-  (:use [event :only [mouse-adapter mouse-motion-adapter create-selection-action-listener]])
-  (:use [path :only [path-debug]])
-  (:use [unit :only [unit-debug]])
+  (:use
+    [paint :only [paint-panel paint-debug]]
+    [event :only [mouse-adapter mouse-motion-adapter create-selection-action-listener]]
+    [path :only [path-debug]]
+    [unit :only [unit-debug]])
   (:import (javax.swing JFrame JPanel JTextArea WindowConstants ButtonGroup JRadioButton SwingUtilities JTabbedPane JScrollPane)
            (java.awt.event MouseAdapter MouseMotionAdapter)
-           (java.awt Dimension BorderLayout))
-  )
+           (java.awt Dimension BorderLayout)))
 
 (def main-frame (JFrame. "Path Finder"))
 (def debug-frame (JFrame. "PF - Debug"))

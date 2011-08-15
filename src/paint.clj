@@ -1,9 +1,11 @@
 (ns paint
-  (:use [unit :only [units repaints unit-ref-shape-xywh]])
-  (:use [select :only [selection selected-units unit-selected? union-selections selection-rectangle]])
-  (:use [grid])
+  (:use
+    [unit :only [units repaints unit-ref-shape-xywh]]
+    [select :only [selection selected-units unit-selected? union-selections selection-rectangle]]
+    [path :only [pheromones]]
+    [grid])
   (:import
-    (java.awt.geom Line2D$Float)
+    (java.awt.geom Line2D$Float Rectangle2D$Float)
     (java.awt Color Rectangle)
     (javax.swing SwingUtilities JPanel)))
 
@@ -18,8 +20,32 @@
 
 (defn in-clip?
   "Returns if a unit is in a clipping region shape. (Might be dupe of sel-contains-unit?)"
-  [clip unit]
-  (.intersects (:shape @unit) (.getX clip) (.getY clip) (.getWidth clip) (.getHeight clip)))
+  [rect clip]
+  (.intersects rect (.getX clip) (.getY clip) (.getWidth clip) (.getHeight clip)))
+
+(defn coord-to-rect
+  "Given a {:x _ :y _} map return a Rectangle2D$Float rectangle
+  with grid-size width and height"
+  [{:keys [x y]}]
+  (Rectangle2D$Float. x y grid-size grid-size))
+
+(defn draw-pheromone
+  "Draw a square showing a pheromone level"
+  [g2d coord level]
+  (if (in-clip? (coord-to-rect coord) (.getClip g2d))
+    (do
+      (let [blue (- 255 (min 255 (* level 50)))]
+        (debug "level" level "blue" blue)
+        (.setColor g2d (Color. 0 0 blue))
+      )
+      (.fill g2d (coord-to-rect coord)))))
+
+(defn draw-pheromones
+  "Draw all the pheromones for all the units"
+  [g2d]
+  (doseq [unit (keys @pheromones)]
+    (doseq [point (keys (get @pheromones unit))]
+      (draw-pheromone g2d point (get-in @pheromones [unit point])))))
 
 (defn draw-unit
   "Draw a unit on the draw panel"
@@ -27,6 +53,19 @@
   (let [selected (unit-selected? unit) color (if selected Color/RED Color/BLACK)]
     (.setColor g2d color)
     (.draw g2d (:shape @unit))))
+
+(defn draw-units
+  "given a Graphics2D object, draw all units within the G2D clip"
+  [g2d]
+  (if-let [units @units]
+    (do
+      ;(debug "units" (filter (fn [unit] in-clip? (:shape @unit) (.getClip g2d)) units))
+
+      (doall
+        (map
+          (fn [unit] (draw-unit g2d unit))
+          (filter #(in-clip? (:shape @%) (.getClip g2d)) units)))
+      )))
 
 (defn draw-selection
   "Draw a selection rectangle"
@@ -63,16 +102,14 @@
 (defn draw-panel-paint
   "Function to repaint the dirty regions of the draw panel"
   [panel g2d]
-      (if draw-grid? (draw-grid panel g2d))
 
-      (let [units @units
-            selection @selection
-            sel-start (:start selection)
-            sel-end (:end selection)]
-        (if units
-          (doall (map (fn [unit] (draw-unit g2d unit)) (filter (partial in-clip? (.getClip g2d)) units))))
+  (if draw-grid? (draw-grid panel g2d))
 
-        (draw-selection g2d)))
+  (draw-pheromones g2d)
+
+  (draw-units g2d)
+
+  (draw-selection g2d))
 
 ;defined here so that it can be referred to here as well as in gui.clj
 (def paint-panel (proxy (JPanel) [] (paintComponent [g2d] (draw-panel-paint this g2d))))
@@ -92,7 +129,7 @@
   [_ ref _ new-state]
   (let [new-repaints new-state]
 
-    (debug "do-repaints: " new-repaints)
+    ;(debug "do-repaints: " new-repaints)
 
     (if (seq new-repaints)
       (do

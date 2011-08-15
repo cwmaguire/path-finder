@@ -1,7 +1,8 @@
 (ns select
-  (:use [unit :only [units]])
-  (:use [geom :only [xywh]])
-  (:use [clojure.contrib.math :only [abs]])
+  (:use
+    [unit :only [units]]
+    [geom :only [xywh]]
+    [clojure.contrib.math :only [abs]])
   (:import (java.awt.geom Point2D$Float Rectangle2D$Float)))
 
 (def selected-units (atom []))

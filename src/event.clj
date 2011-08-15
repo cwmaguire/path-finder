@@ -1,10 +1,12 @@
 (ns event
-  (:use [unit :only [units move-unit create-unit get-unit]])
-  (:use [select :only [selection selected-units select-unit sel-contains-unit? mouse-dragged]])
-  (:use [grid :only [resolve-to-square]])
-  (:import (java.awt.event ActionListener))
-  (:import (java.awt.geom Point2D$Float))
-  (:import (java.awt.event MouseEvent MouseAdapter MouseMotionAdapter)))
+  (:use
+    [unit :only [units move-unit create-unit get-unit]]
+    [select :only [selection selected-units select-unit sel-contains-unit? mouse-dragged]]
+    [grid :only [resolve-to-square]])
+  (:import
+    (java.awt.event ActionListener)
+    (java.awt.geom Point2D$Float)
+    (java.awt.event MouseEvent MouseAdapter MouseMotionAdapter)))
 
 ;This is where we handle all GUI events
 

@@ -96,8 +96,9 @@
   "Given a unit and a point, update the pheromone count for
   that position"
   [unit p]
-  (let [old-phero (get @pheromones [unit p])
+  (let [old-phero (get-in @pheromones [unit p])
         new-phero (if (nil? old-phero) 1 (inc old-phero))]
+    (debug "p" p "old phero" old-phero "new phero" new-phero)
     (dosync
       (alter pheromones assoc-in [unit p] new-phero))))
 
@@ -135,7 +136,7 @@
     :default (if-let [next (next-move-fn (last path))]
       (do
         (update-phero unit next)
-        (debug "explore: [" (.getId (Thread/currentThread)) "] " (inc steps) max-steps " target " target " path " path " next: " next " new path: " (trunc-conj path next))
+        ;(debug "explore: [" (.getId (Thread/currentThread)) "] " (inc steps) max-steps " target " target " path " path " next: " next " new path: " (trunc-conj path next))
         ;path)
         (recur (trunc-conj path next) next-move-fn target (inc steps) max-steps unit))
       path)))
