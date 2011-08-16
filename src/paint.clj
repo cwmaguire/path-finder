@@ -52,14 +52,16 @@
   [g2d unit]
   (let [selected (unit-selected? unit) color (if selected Color/RED Color/BLACK)]
     (.setColor g2d color)
-    (.draw g2d (:shape @unit))))
+    (.fill g2d (:shape @unit))))
 
 (defn draw-units
   "given a Graphics2D object, draw all units within the G2D clip"
   [g2d]
   (if-let [units @units]
     (do
-      ;(debug "units" (filter (fn [unit] in-clip? (:shape @unit) (.getClip g2d)) units))
+      ;(debug "draw-units: units" units)
+      ;(debug "draw-units: clip" (.getClip g2d))
+      ;(debug "draw-units: first unit in clip" @(first (filter (fn [unit] in-clip? (:shape @unit) (.getClip g2d)) units)))
 
       (doall
         (map

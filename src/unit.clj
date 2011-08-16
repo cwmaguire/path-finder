@@ -95,7 +95,7 @@
         (let [new-shape (new-shape (first path))
               old-shape (:shape @unit)]
           (swap! unit assoc :shape new-shape)
-          (Thread/sleep 1000)
+          (Thread/sleep 300)
           (swap! repaints conj (create-repaint-rect old-shape new-shape))
           (recur unit (next path)))))
 

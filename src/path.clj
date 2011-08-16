@@ -3,7 +3,7 @@
 
 (def ants (ref {})) ; key is [ant #] value is [moves] where each move is of the form {:x _ :y _}
 (def pheromones (ref {}))
-(def num-ants 1)
+(def num-ants 2)
 (def path-debug (ref nil))
 
 
@@ -115,7 +115,7 @@
     :weight
     (+
       (if (occupied? coord) 1000000 0)
-      (if (nil? pheromone-level) 0 pheromone-level)
+      (if (nil? pheromone-level) 0 (* pheromone-level 10000))
       (distance coord target))}))
 
 (defn next-move
@@ -123,15 +123,16 @@
   tell if a tile is occupied and a function to read
   pheromone levels"
   [unit occupied? grid-size target src]
-  (:coord
-    (first
+  (let [weights
       (sort #(< (:weight %1) (:weight %2))
         (map
           (comp
              (partial weigh unit occupied? target)
              (partial move-coord src)
              (partial mult-by-grid-size grid-size))
-           directions)))))
+           directions))]
+    (debug "weights for src/target " src target weights)
+    (:coord (first weights))))
 
 ; an ant is a function that recursively does three things:
 ; 1) checks if it's alive
@@ -149,7 +150,7 @@
   memory"
   [path next-move-fn target steps max-steps unit occupied?]
 
-  (Thread/sleep 1000)
+  (Thread/sleep 500)
 
   (cond
     (= steps max-steps)
@@ -157,7 +158,9 @@
         ;(debug "max steps")
         (next path)) ; chop off the original src point
 
-    (= target (last path)) (next path) ; chop off the original source point
+    (= target (last path))
+        ; chop off the original source point
+        (next path)
 
     :default (if-let [next (next-move-fn (last path))]
       (do
@@ -235,7 +238,7 @@
 
   (dosync (alter pheromones dissoc unit))
 
-  (let [fns (repeat num-ants (fn [] (explore [src] (partial next-move unit occupied? square-size target) target 0 10 unit occupied?)))
+  (let [fns (repeat num-ants (fn [] (explore [src] (partial next-move unit occupied? square-size target) target 0 100 unit occupied?)))
         paths (apply pcalls fns)
         shortest (shortest-path paths target)]
     (doseq [path paths]
