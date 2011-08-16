@@ -3,7 +3,7 @@
 
 (def ants (ref {})) ; key is [ant #] value is [moves] where each move is of the form {:x _ :y _}
 (def pheromones (ref {}))
-(def num-ants 5)
+(def num-ants 1)
 (def path-debug (ref nil))
 
 
@@ -45,7 +45,8 @@
   "Given a function to determine if a point is occupied, a size of grid square
   (to translate directions to coordinates) and a src, pick a random direction
   and return the coordinates of the next point from the src in that direction"
-  ([occupied? grid-size src] (rand-dir occupied? grid-size src []))
+  ([occupied? grid-size src]
+    (rand-dir occupied? grid-size src []))
 
   ([occupied? grid-size src prev]
     (if (>= 8 (count prev))
@@ -98,17 +99,39 @@
   [unit p]
   (let [old-phero (get-in @pheromones [unit p])
         new-phero (if (nil? old-phero) 1 (inc old-phero))]
-    (debug "p" p "old phero" old-phero "new phero" new-phero)
+    ;(debug "p" p "old phero" old-phero "new phero" new-phero)
     (dosync
       (alter pheromones assoc-in [unit p] new-phero))))
+
+(defn weigh
+  "Given a coord, weigh the coordinate according to these priorities:
+  is the coord occupied?, how much pheromones are at the coordinate?,
+  how many steps from coord to target?; returns a list of maps with
+  the coord and the weight"
+  [unit occupied? target coord]
+  (let [pheromone-level (get-in @pheromones [unit coord])]
+    ;(debug "unit" unit "target" target "coord" coord)
+    {:coord coord
+    :weight
+    (+
+      (if (occupied? coord) 1000000 0)
+      (if (nil? pheromone-level) 0 pheromone-level)
+      (distance coord target))}))
 
 (defn next-move
   "Figure out the next move given a source, target, a function to
   tell if a tile is occupied and a function to read
   pheromone levels"
-  [src dest occupied? pheromones]
-  ;for now I'm used rand-dir to pick a direction, but I'll need this eventually
-  nil)
+  [unit occupied? grid-size target src]
+  (:coord
+    (first
+      (sort #(< (:weight %1) (:weight %2))
+        (map
+          (comp
+             (partial weigh unit occupied? target)
+             (partial move-coord src)
+             (partial mult-by-grid-size grid-size))
+           directions)))))
 
 ; an ant is a function that recursively does three things:
 ; 1) checks if it's alive
@@ -124,7 +147,10 @@
   We can't use (count path) for number of steps because loops are
   eliminated (once we loop back to a point we erase the loop from
   memory"
-  [path next-move-fn target steps max-steps unit]
+  [path next-move-fn target steps max-steps unit occupied?]
+
+  (Thread/sleep 1000)
+
   (cond
     (= steps max-steps)
       (do
@@ -138,7 +164,7 @@
         (update-phero unit next)
         ;(debug "explore: [" (.getId (Thread/currentThread)) "] " (inc steps) max-steps " target " target " path " path " next: " next " new path: " (trunc-conj path next))
         ;path)
-        (recur (trunc-conj path next) next-move-fn target (inc steps) max-steps unit))
+        (recur (trunc-conj path next) next-move-fn target (inc steps) max-steps unit occupied?))
       path)))
 
 ;(explore [{:x 0 :y 0}] (fn [& _] {:x 0 :y 0}) {:x 1 :y 1} 5 5 :unit)
@@ -209,7 +235,7 @@
 
   (dosync (alter pheromones dissoc unit))
 
-  (let [fns (repeat num-ants (fn [] (explore [src] (partial rand-dir occupied? square-size) target 0 10 unit)))
+  (let [fns (repeat num-ants (fn [] (explore [src] (partial next-move unit occupied? square-size target) target 0 10 unit occupied?)))
         paths (apply pcalls fns)
         shortest (shortest-path paths target)]
     (doseq [path paths]

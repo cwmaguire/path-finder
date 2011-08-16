@@ -27,17 +27,17 @@
   "Given a {:x _ :y _} map return a Rectangle2D$Float rectangle
   with grid-size width and height"
   [{:keys [x y]}]
-  (Rectangle2D$Float. x y grid-size grid-size))
+  (Rectangle2D$Float. x y square-size square-size))
 
 (defn draw-pheromone
   "Draw a square showing a pheromone level"
   [g2d coord level]
   (if (in-clip? (coord-to-rect coord) (.getClip g2d))
     (do
-      (let [blue (- 255 (min 255 (* level 50)))]
-        (debug "level" level "blue" blue)
-        (.setColor g2d (Color. 0 0 blue))
-      )
+      (let [blue (- 255 (min 255 (* (dec level) 50)))]
+        ;(debug "level" level "blue" blue)
+        (.setColor g2d (Color. 0 blue blue)))
+      ;(debug "draw-pheromone - coord rect: " (coord-to-rect coord))
       (.fill g2d (coord-to-rect coord)))))
 
 (defn draw-pheromones
@@ -137,6 +137,11 @@
         (doseq [rect (map new-rectangle new-repaints)]
           (SwingUtilities/invokeLater (fn [] (.repaint paint-panel rect))))))))
 
+(defn repaint-paint-panel
+  "Repaints the entire paint panel"
+  [& _]
+  (.repaint paint-panel))
+
 (defn unique
   "given two collections, return a set of elements unique to both collections; e.g. [1 2 3][3 4 5] -> [1 2 4 5]"
   [xs ys]
@@ -174,3 +179,4 @@
 (add-watch units ::units-watch paint-changed-units)
 (add-watch selected-units ::selected-units-watch paint-changed-units)
 (add-watch repaints ::repaints-watch do-repaints)
+(add-watch pheromones ::pheromones-watch repaint-paint-panel)

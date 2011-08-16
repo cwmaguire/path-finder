@@ -53,9 +53,9 @@
 
 (defn occupied?
   "Given the coordinates of a square, return if it's occupied by a unit"
-  [square]
+  [coord]
   ;(debug "occupied? " square)
-  (seq (filter (fn [unit-ref] (= square (get-coords unit-ref))) @units)))
+  (seq (filter (fn [unit-ref] (= coord (get-coords unit-ref))) @units)))
 
 (defn inc-rect
   "Given a rectangle return a rectangle that is one pixel bigger
