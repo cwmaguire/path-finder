@@ -1,9 +1,9 @@
 (ns path
-  (:use [clojure.contrib.generic.math-functions :only [abs]]))
+  (:use [clojure.contrib.generic.math-functions :only [abs sqrt sqr]]))
 
 (def ants (ref {})) ; key is [ant #] value is [moves] where each move is of the form {:x _ :y _}
 (def pheromones (ref {}))
-(def num-ants 2)
+(def num-ants 4)
 (def path-debug (ref nil))
 
 
@@ -25,9 +25,11 @@
 (defn distance
   "calculate travel distance if only the eight cardinal directions are allowed"
   [src dest]
-  ;the shorter of the x or y distance is cancelled out by travelling diagonally
   (let [sx (:x src) sy (:y src) dx (:x dest) dy (:y dest)]
-    (max (abs (- sx dx)) (abs (- sy dy)))))
+    ;the shorter of the x or y distance is cancelled out by travelling diagonally
+    ;(max (abs (- sx dx)) (abs (- sy dy)))
+
+    (sqrt (+ (sqr (- sx dx)) (sqr (- sy dy))))))
 
 (defn move-coord
   "Given an xy co-ord and an xy direction return the modified co-ords, e.g.
@@ -131,7 +133,7 @@
              (partial move-coord src)
              (partial mult-by-grid-size grid-size))
            directions))]
-    (debug "weights for src/target " src target weights)
+    ;(debug "weights for src/target " src target weights)
     (:coord (first weights))))
 
 ; an ant is a function that recursively does three things:
@@ -150,7 +152,7 @@
   memory"
   [path next-move-fn target steps max-steps unit occupied?]
 
-  (Thread/sleep 500)
+  (Thread/sleep 5)
 
   (cond
     (= steps max-steps)
@@ -238,7 +240,7 @@
 
   (dosync (alter pheromones dissoc unit))
 
-  (let [fns (repeat num-ants (fn [] (explore [src] (partial next-move unit occupied? square-size target) target 0 100 unit occupied?)))
+  (let [fns (repeat num-ants (fn [] (explore [src] (partial next-move unit occupied? square-size target) target 0 400 unit occupied?)))
         paths (apply pcalls fns)
         shortest (shortest-path paths target)]
     (doseq [path paths]

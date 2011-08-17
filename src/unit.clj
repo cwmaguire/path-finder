@@ -72,7 +72,7 @@
   "takes two rectangles and returns the union"
   [rect1 rect2]
   (let [rect-union (inc-rect (.createUnion rect1 rect2))]
-    (apply debug "create-repaint-rect: " (map rect-coords [rect1 rect2 rect-union]))
+    ;(apply debug "create-repaint-rect: " (map rect-coords [rect1 rect2 rect-union]))
     rect-union))
 
 (defn new-shape
@@ -95,7 +95,7 @@
         (let [new-shape (new-shape (first path))
               old-shape (:shape @unit)]
           (swap! unit assoc :shape new-shape)
-          (Thread/sleep 300)
+          (Thread/sleep 30)
           (swap! repaints conj (create-repaint-rect old-shape new-shape))
           (recur unit (next path)))))
 
@@ -103,7 +103,7 @@
   "Move a unit."
   [{:keys [unit move] :as unit-move}]
 
-  (debug "move-unit; move: " move)
+  ;(debug "move-unit; move: " move)
 
     (if (not (move-unit-along-path unit (best-path unit (get-coords unit) move occupied? square-size)))
       (recur unit-move)))
