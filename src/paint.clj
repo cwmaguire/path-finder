@@ -4,6 +4,7 @@
     [select :only [selection selected-units unit-selected? union-selections selection-rectangle]]
     [path :only [pheromones]]
     [grid])
+  (:require clojure.set)
   (:import
     (java.awt.geom Line2D$Float Rectangle2D$Float)
     (java.awt Color Rectangle)
@@ -47,12 +48,25 @@
     (doseq [point (keys (get @pheromones unit))]
       (draw-pheromone g2d point (get-in @pheromones [unit point])))))
 
-(defn draw-unit
-  "Draw a unit on the draw panel"
-  [g2d unit]
-  (let [selected (unit-selected? unit) color (if selected Color/RED Color/BLACK)]
+(defmulti draw-unit (fn [_ unit] (:type @unit)))
+
+(defmethod draw-unit :unit [g2d unit]
+  (let [selected? (unit-selected? unit)
+        color (if selected? Color/RED Color/GREEN)]
     (.setColor g2d color)
     (.fill g2d (:shape @unit))))
+
+(defmethod draw-unit :obstacle [g2d unit]
+    (.setColor g2d Color/BLACK)
+    (.fill g2d (:shape @unit)))
+
+;(defn draw-unit
+;  "Draw a unit on the draw panel"
+;  [g2d unit]
+;  (let [selected? (unit-selected? unit)
+;        color (if selected? Color/RED Color/WHITE)]
+;    (.setColor g2d color)
+;    (.fill g2d (:shape @unit))))
 
 (defn draw-units
   "given a Graphics2D object, draw all units within the G2D clip"

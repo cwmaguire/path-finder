@@ -2,7 +2,7 @@
   (:use
     [unit :only [units]]
     [geom :only [xywh]]
-    [clojure.contrib.math :only [abs]])
+    [clojure.math.numeric-tower :only [abs]])
   (:import (java.awt.geom Point2D$Float Rectangle2D$Float)))
 
 (def selected-units (atom []))
@@ -73,14 +73,24 @@
           max-y (max y1 y2 y3 y4)]
       [min-x min-y (- max-x min-x) (- max-y min-y)])))
 
-(defn select-unit
-  "Create a new selection with this unit or add it to the existing selection based on the Ctrl key flag"
+(defmulti select-unit (fn [unit _] (:type @unit)))
+
+(defmethod select-unit
+  ;"Create a new selection with this unit or add it to the existing selection based on the Ctrl key flag"
+  :unit
   [unit ctrl?]
   (if (not ctrl?)
     (swap! selected-units empty))
 
   ; remove selected unit from selection on ctrl+LMB
   (if (unit-selected? unit)
-      (swap! selected-units (partial remove #(= unit %)))
+      (swap! selected-units (partial remove (fn [x] (= unit x))))
       (swap! selected-units conj unit)))
+
+(defmethod select-unit
+  ;"Selecting an obstacle doesn't do anything except clear the selection"
+  :obstacle
+  [unit ctrl?]
+  (if (not ctrl?)
+    (swap! selected-units empty)))
 

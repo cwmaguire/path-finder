@@ -1,5 +1,7 @@
 (ns path
-  (:use [clojure.contrib.generic.math-functions :only [abs sqrt sqr]]))
+  (:use
+    [clojure.math.numeric-tower :only [abs sqrt]]
+    [clojure.algo.generic.math-functions :only [sqr]]))
 
 (def ants (ref {})) ; key is [ant #] value is [moves] where each move is of the form {:x _ :y _}
 (def pheromones (ref {}))
@@ -135,6 +137,9 @@
            directions))]
     ;(debug "weights for src/target " src target weights)
     (:coord (first weights))))
+
+
+(defn optimize-path [])
 
 ; an ant is a function that recursively does three things:
 ; 1) checks if it's alive

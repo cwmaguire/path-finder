@@ -2,7 +2,8 @@
   (:use
     [unit :only [units move-unit create-unit get-unit]]
     [select :only [selection selected-units select-unit sel-contains-unit? mouse-dragged]]
-    [grid :only [resolve-to-square]])
+    [grid :only [resolve-to-square]]
+    [clojure.string :only [lower-case]])
   (:import
     (java.awt.event ActionListener)
     (java.awt.geom Point2D$Float)
@@ -10,13 +11,13 @@
 
 ;This is where we handle all GUI events
 
-(def left-click-create-type (atom "Unit"))
+(def left-click-create-type (atom :unit))
 
 (defn new-unit
   "Given a mouse event and a ctrl? flag (for the Ctrl keyboard key), create a new room and either select it or add it
    to the existing room selections"
   [mouse-event ctrl?]
-  (select-unit (create-unit mouse-event) ctrl?))
+  (select-unit (create-unit mouse-event @left-click-create-type) ctrl?))
 
 (defn left-mouse [mouse-event]
   (let [ctrl? (.isControlDown mouse-event)]
@@ -30,13 +31,12 @@
   ;(swap! unit-moves concat (map (fn [unit] {:unit unit :move {:x (resolve-to-square (.getX mouse-event)) :y (resolve-to-square (.getY mouse-event))}}) @selected-units))
   (doseq [unit @selected-units]
     (-> (Thread. #(move-unit {:unit unit :move {:x (resolve-to-square (.getX mouse-event)) :y (resolve-to-square (.getY mouse-event))}}))
-      (.start))
-  ))
+      (.start))))
 
 (def create-selection-action-listener
   (proxy (ActionListener) []
     (actionPerformed [actionEvent]
-      (reset! left-click-create-type (.getActionCommand actionEvent)))))
+      (reset! left-click-create-type (keyword (lower-case (.getActionCommand actionEvent)))))))
 
 (defn mouse-clicked [mouse-event]
   (if (= MouseEvent/BUTTON1 (.getButton mouse-event))

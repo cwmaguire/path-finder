@@ -28,10 +28,11 @@
     (first (filter #(. (:shape (deref %)) contains p) @units))))
 
 (defn create-unit
-  "Given a mouse event and a ctrl flag (for the Ctrl keyboard key), create a new room and either select it or add it
+  "Given a mouse event and a ctrl flag (for the Ctrl keyboard key), create a new unit and either select it or add it
    to the existing room selections"
-  [mouse-event]
-  (let [new-unit (atom {:shape (Rectangle2D$Float. (resolve-to-square (.getX mouse-event)) (resolve-to-square (.getY mouse-event)) unit-size unit-size)})]
+  [mouse-event type]
+  (let [new-unit (atom {:type type
+                        :shape (Rectangle2D$Float. (resolve-to-square (.getX mouse-event)) (resolve-to-square (.getY mouse-event)) unit-size unit-size)})]
     (swap! units conj new-unit)
     new-unit))
 
